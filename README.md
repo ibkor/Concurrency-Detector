@@ -1,3 +1,5 @@
+License
+This project is licensed under the MIT License - see the LICENSE file for details.
 
 This PowerShell script collects resource and configuration data from a Veeam Backup & Replication environment, 
 including VMware Proxies, CDP Proxies, NAS Gateways, and Backup Repositories. It optionally performs a rescan of all hosts to ensure data is current.
