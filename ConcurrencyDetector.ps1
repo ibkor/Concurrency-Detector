@@ -36,7 +36,7 @@ $CDPProxies = Get-VBRCDPProxy
 # Get all VBR Repositories
 $VBRRepositories = Get-VBRBackupRepository
 
-$BackupServerName = (Get-VBRBackupServerInfo).Name
+$BackupServerName = [System.Net.Dns]::GetHostByName(($env:computerName)).HostName
 
 #Get All GP Proxies
 $GPProxies = Get-VBRNASProxyServer
