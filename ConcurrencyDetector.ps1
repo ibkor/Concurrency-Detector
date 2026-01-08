@@ -1,5 +1,3 @@
-﻿
-
 # Rescan all the host when needed
 function Get-UserResponse {
     $validResponses = @('y', 'n')
@@ -340,14 +338,14 @@ foreach ($server in $hostRoles.GetEnumerator()) {
 
     $RequirementComparison = [PSCustomObject]@{
         "Server"          = $serverName
-        "Type"            = ($server.Value.Roles -join ', ')
+        "Type"            = ($server.Value.Roles -join '; ')
         "Required Cores"  = $RequiredCores
         "Available Cores" = $coresAvailable
         "Required RAM (GB)" = $RequiredRAM
         "Available RAM (GB)" = $ramAvailable
         "Concurrent Tasks" = $totalTasks
         "Suggested Tasks"  = $MaxSuggestedTasks
-        "Names"           = ($server.Value.Names -join ', ')
+        "Names"           = ($server.Value.Names -join '; ')
     }
     $RequirementsComparison += $RequirementComparison
 }
@@ -373,7 +371,7 @@ $multiRoleServers = $hostRoles.GetEnumerator() | Where-Object { $_.Value.Roles.C
 
 if ($multiRoleServers) {
     $multiRoleServers | ForEach-Object {
-        Write-Host "$($_.Key) has roles: $($_.Value.Roles -join ', ') - Names: $($_.Value.Names -join ', ')"
+        Write-Host "$($_.Key) has roles: $($_.Value.Roles -join '; ') - Names: $($_.Value.Names -join '; ')"
     }
 } else {
     Write-Host "No servers are being used for multiple roles."
@@ -435,3 +433,4 @@ $UnderconfiguredConfiguration | Export-Csv -Path "C:\csv\UnderconfiguredConfigur
 $SuboptimalConfiguration | Export-Csv -Path "C:\csv\SuboptimalConfiguration.csv" -NoTypeInformation
 
 Write-Host "Data exported to CSV files successfully."
+ 
