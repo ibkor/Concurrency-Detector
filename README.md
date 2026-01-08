@@ -8,3 +8,11 @@ The script aggregates hardware resources (CPU, RAM), calculates recommended conc
 
 Results are categorized as optimized, underconfigured, or suboptimal configurations, with detailed comparisons. All findings are exported to CSV files for further analysis.
 
+#USAGE
+Open PowerShell on your Veeam Backup & Replication server.
+Run the script:
+.\your-script-name.ps1
+
+Follow the prompt to choose whether to rescan all hosts.
+
+Review the output in your console and check the generated CSV files in C:\csv\ for detailed results on repositories, proxies, gateways, and configuration analysis. 
