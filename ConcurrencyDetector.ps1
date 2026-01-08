@@ -386,10 +386,9 @@ $SuboptimalConfiguration = @()
 $UnderconfiguredConfiguration = @()
 
 foreach ($req in $RequirementsComparison) {
-    if ($req."Concurrent Tasks" -eq $req."Suggested Tasks") {
+
+    if ($req."Concurrent Tasks" -le $req."Suggested Tasks" -or ($req.'Required RAM (GB)' -le $req.'Available RAM (GB)' -and $req.'Required Cores' -le $req.'Available Cores')) {
         $OptimizedConfiguration += $req
-    } elseif ($req."Concurrent Tasks" -lt $req."Suggested Tasks") {
-        $UnderconfiguredConfiguration += $req
     } else {
         $SuboptimalConfiguration += $req
     }
@@ -403,13 +402,6 @@ if ($OptimizedConfiguration.Count -gt 0) {
     Write-Host "No servers found with optimized configuration."
 }
 
-# Display the Underconfigured Configuration
-if ($UnderconfiguredConfiguration.Count -gt 0) {
-    Write-Host "Underconfigured Configuration:"
-    $UnderconfiguredConfiguration | Format-Table 
-} else {
-    Write-Host "No servers found with underconfigured configuration."
-}
 
 # Display the Suboptimal Configuration
 if ($SuboptimalConfiguration.Count -gt 0) {
@@ -429,7 +421,6 @@ $RequirementsComparison | Export-Csv -Path "C:\csv\RequirementsComparison.csv" -
 
 # Exporting the separated configurations to CSV files for optimized, underconfigured, and suboptimal
 $OptimizedConfiguration | Export-Csv -Path "C:\csv\OptimizedConfiguration.csv" -NoTypeInformation
-$UnderconfiguredConfiguration | Export-Csv -Path "C:\csv\UnderconfiguredConfiguration.csv" -NoTypeInformation
 $SuboptimalConfiguration | Export-Csv -Path "C:\csv\SuboptimalConfiguration.csv" -NoTypeInformation
 
 Write-Host "Data exported to CSV files successfully."
