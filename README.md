@@ -11,6 +11,8 @@ The script aggregates hardware resources (CPU, RAM), calculates recommended conc
 
 Results are categorized as optimized, underconfigured, or suboptimal configurations, with detailed comparisons. All findings are exported to CSV files for further analysis.
 
+Suggested Tasks are information only, may not reflect the actual load the server can bear. Double check with Required and Available Resources. 
+
 #USAGE
 
 Open PowerShell on your Veeam Backup & Replication server.
