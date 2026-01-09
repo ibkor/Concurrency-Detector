@@ -1,4 +1,5 @@
- #import module
+# This project is licensed under the MIT License - see the LICENSE file for details.
+#import module
 Import-Module /opt/veeam/powershell/Veeam.Backup.PowerShell/Veeam.Backup.PowerShell.psd1
 
 #Connect to VBR
