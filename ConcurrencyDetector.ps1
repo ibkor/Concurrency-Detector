@@ -1,3 +1,7 @@
+#Connect to VBR
+$creds = Get-Credential
+Connect-VBRServer -Credential $creds -Server "Your VBR Server"
+
 # Rescan all the host when needed
 function Get-UserResponse {
     $validResponses = @('y', 'n')
