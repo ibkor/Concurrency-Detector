@@ -284,8 +284,8 @@ foreach ($server in $hostRoles.GetEnumerator()) {
     if ($serverName -contains $BackupServerName) {
         $RequiredCores += 8  #CPU core requirement for Backup Server v13 added
         $RequiredRAM += 16    #RAM requirement for Backup Server v13 added
-        $SuggestionCores += -4
-        $SuggestionRAM += -8
+        $SuggestionCores += -8
+        $SuggestionRAM += -16
         $j++
     }
 
