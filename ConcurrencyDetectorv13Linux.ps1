@@ -1,3 +1,10 @@
+ #import module
+Import-Module /opt/veeam/powershell/Veeam.Backup.PowerShell/Veeam.Backup.PowerShell.psd1
+
+#Connect to VBR
+$creds = Get-Credential
+Connect-VBRServer -Credential $creds -Server "Your VBR Server"
+
 # Rescan all the host when needed
 function Get-UserResponse {
     $validResponses = @('y', 'n')
@@ -48,41 +55,6 @@ $RepoData = @()
 $GPProxyData = @()
 $RequirementsComparison = @()
 $hostRoles = @{}
-
-#Get SQL Server Host
-function Get-SqlSName {
-
-# Define registry paths and keys
-$basePath = "HKLM:\SOFTWARE\Veeam\Veeam Backup and Replication"
-$databaseConfigurationPath = "$basePath\DatabaseConfigurations"
-$sqlActiveConfigurationKey = "SqlActiveConfiguration"
-$postgreSqlPath = "$databaseConfigurationPath\PostgreSql"
-$msSqlPath = "$databaseConfigurationPath\MsSql"
-$SQLSName = ""
-
-try {
-    $SQLSName = (Get-ItemProperty -Path $basePath -Name $sqlServerNameKey -ErrorAction Stop).SqlServerName
-} catch {
-    try {
-        $sqlActiveConfig = Get-ItemProperty -Path $databaseConfigurationPath -Name $sqlActiveConfigurationKey -ErrorAction Stop
-        $activeConfigValue = $sqlActiveConfig.$sqlActiveConfigurationKey
-
-        if ($activeConfigValue -eq "PostgreSql") {
-            $SQLSName = (Get-ItemProperty -Path $postgreSqlPath -Name $sqlHostNameKey -ErrorAction Stop).SqlHostName
-        } else {            
-            $SQLSName = (Get-ItemProperty -Path $msSqlPath -Name $sqlServerNameKey -ErrorAction Stop).SqlHostName
-        }
-    } catch {
-        Write-Error "Unable to retrieve SQL Server name from registry."
-    }
-}
-
-If ($SQLSName -eq "localhost") {
-    $SQLSName = $BackupServerName
-}
-
-return $SQLSName
-}
 
 function ConverttoGB ($inBytes) {
     $inGB = [math]::Floor($inBytes / 1GB)
@@ -319,14 +291,6 @@ foreach ($server in $hostRoles.GetEnumerator()) {
         $j++
     }
 
-    if ($SQLServer -eq $serverName) {
-        $RequiredCores += 1  #min CPU core requirement for SQL Server added
-        $RequiredRAM += 1    #min RAM requirement for SQL Server added
-        $SuggestionCores += -1
-        $SuggestionRAM += -1
-        $i++
-    }
-
     $SuggestedTasksByCores += $SuggestionCores*2
     $SuggestedTasksByRAM += $SuggestionRAM  
 
@@ -416,8 +380,8 @@ if ($SuboptimalConfiguration.Count -gt 0) {
 $RepoData | Export-Csv -Path "/tmp/csv/Repositories.csv" -NoTypeInformation
 $GWData | Export-Csv -Path "/tmp/csv/Gateways.csv" -NoTypeInformation
 $ProxyData | Export-Csv -Path "/tmp/csv/Proxies.csv" -NoTypeInformation
-$CDPProxyData | Export-Csv -Path "/tmpcsv/CDPProxies.csv" -NoTypeInformation
-$RequirementsComparison | Export-Csv -Path "/tmp/csvRequirementsComparison.csv" -NoTypeInformation
+$CDPProxyData | Export-Csv -Path "/tmp/csv/CDPProxies.csv" -NoTypeInformation
+$RequirementsComparison | Export-Csv -Path "/tmp/csv/RequirementsComparison.csv" -NoTypeInformation
 
 # Exporting the separated configurations to CSV files for optimized, underconfigured, and suboptimal
 $OptimizedConfiguration | Export-Csv -Path "/tmp/csv/OptimizedConfiguration.csv" -NoTypeInformation
