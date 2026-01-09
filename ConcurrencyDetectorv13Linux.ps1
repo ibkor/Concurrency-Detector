@@ -250,8 +250,6 @@ $hostRoles[$BackupServerName].Roles += ("BackupServer" -join ', ')
 $i = 0
 $j = 0
 
-$SQLServer = Get-SqlSName
-
 # Calculate requirements based on aggregated resources for multi-role servers
 foreach ($server in $hostRoles.GetEnumerator()) {
     $SuggestedTasksByCores = 0 
