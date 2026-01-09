@@ -1,5 +1,4 @@
-# This project is licensed under the MIT License - see the LICENSE file for details.
-#import module
+ #import module
 Import-Module /opt/veeam/powershell/Veeam.Backup.PowerShell/Veeam.Backup.PowerShell.psd1
 
 #Connect to VBR
@@ -283,8 +282,8 @@ foreach ($server in $hostRoles.GetEnumerator()) {
     }
    
     if ($serverName -contains $BackupServerName) {
-        $RequiredCores += 4  #CPU core requirement for Backup Server added
-        $RequiredRAM += 8    #RAM requirement for Backup Server added
+        $RequiredCores += 8  #CPU core requirement for Backup Server v13 added
+        $RequiredRAM += 16    #RAM requirement for Backup Server v13 added
         $SuggestionCores += -4
         $SuggestionRAM += -8
         $j++
@@ -346,7 +345,6 @@ Write-Host "Requirements Comparison:"
 # Separate the outputs into optimized, underconfigured, and suboptimal configurations based on the comparison
 $OptimizedConfiguration = @()
 $SuboptimalConfiguration = @()
-$UnderconfiguredConfiguration = @()
 
 foreach ($req in $RequirementsComparison) {
 
@@ -380,6 +378,7 @@ $RepoData | Export-Csv -Path "/tmp/csv/Repositories.csv" -NoTypeInformation
 $GWData | Export-Csv -Path "/tmp/csv/Gateways.csv" -NoTypeInformation
 $ProxyData | Export-Csv -Path "/tmp/csv/Proxies.csv" -NoTypeInformation
 $CDPProxyData | Export-Csv -Path "/tmp/csv/CDPProxies.csv" -NoTypeInformation
+$GPProxyData | Export-Csv -Path "/tmp/csv/GPProxies.csv" -NoTypeInformation
 $RequirementsComparison | Export-Csv -Path "/tmp/csv/RequirementsComparison.csv" -NoTypeInformation
 
 # Exporting the separated configurations to CSV files for optimized, underconfigured, and suboptimal
@@ -387,4 +386,3 @@ $OptimizedConfiguration | Export-Csv -Path "/tmp/csv/OptimizedConfiguration.csv"
 $SuboptimalConfiguration | Export-Csv -Path "/tmp/csv/SuboptimalConfiguration.csv" -NoTypeInformation
 
 Write-Host "Data exported to CSV files successfully."
- 
