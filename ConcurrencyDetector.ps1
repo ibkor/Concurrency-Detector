@@ -1,3 +1,4 @@
+# This project is licensed under the MIT License - see the LICENSE file for details.
 #Connect to VBR
 $creds = Get-Credential
 Connect-VBRServer -Credential $creds -Server "Your VBR Server"
@@ -429,3 +430,4 @@ $SuboptimalConfiguration | Export-Csv -Path "C:\csv\SuboptimalConfiguration.csv"
 
 Write-Host "Data exported to CSV files successfully."
  
+
