@@ -1,3 +1,5 @@
+$ExportPath = "/tmp/csv"
+ 
  #import module
 Import-Module /opt/veeam/powershell/Veeam.Backup.PowerShell/Veeam.Backup.PowerShell.psd1
 
@@ -374,15 +376,15 @@ if ($SuboptimalConfiguration.Count -gt 0) {
 
 # Exporting the data to CSV files
 
-$RepoData | Export-Csv -Path "/tmp/csv/Repositories.csv" -NoTypeInformation
-$GWData | Export-Csv -Path "/tmp/csv/Gateways.csv" -NoTypeInformation
-$ProxyData | Export-Csv -Path "/tmp/csv/Proxies.csv" -NoTypeInformation
-$CDPProxyData | Export-Csv -Path "/tmp/csv/CDPProxies.csv" -NoTypeInformation
-$GPProxyData | Export-Csv -Path "/tmp/csv/GPProxies.csv" -NoTypeInformation
-$RequirementsComparison | Export-Csv -Path "/tmp/csv/RequirementsComparison.csv" -NoTypeInformation
+$RepoData | Export-Csv -Path "$ExportPath/Repositories.csv" -NoTypeInformation
+$GWData | Export-Csv -Path "$ExportPath/Gateways.csv" -NoTypeInformation
+$ProxyData | Export-Csv -Path "$ExportPath/Proxies.csv" -NoTypeInformation
+$CDPProxyData | Export-Csv -Path "$ExportPath/CDPProxies.csv" -NoTypeInformation
+$GPProxyData | Export-Csv -Path "$ExportPath/GPProxies.csv" -NoTypeInformation
+$RequirementsComparison | Export-Csv -Path "$ExportPath/RequirementsComparison.csv" -NoTypeInformation
 
 # Exporting the separated configurations to CSV files for optimized, underconfigured, and suboptimal
-$OptimizedConfiguration | Export-Csv -Path "/tmp/csv/OptimizedConfiguration.csv" -NoTypeInformation
-$SuboptimalConfiguration | Export-Csv -Path "/tmp/csv/SuboptimalConfiguration.csv" -NoTypeInformation
+$OptimizedConfiguration | Export-Csv -Path "$ExportPath/OptimizedConfiguration.csv" -NoTypeInformation
+$SuboptimalConfiguration | Export-Csv -Path "$ExportPath/SuboptimalConfiguration.csv" -NoTypeInformation
 
 Write-Host "Data exported to CSV files successfully."
