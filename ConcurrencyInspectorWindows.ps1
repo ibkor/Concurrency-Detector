@@ -286,7 +286,12 @@ foreach ($Repository in $VBRRepositories) {
 $hostRoles[$BackupServerName].Roles += ("BackupServer" -join ', ')
 
 $SQLServer = Get-SqlSName
-$hostRoles[$SQLServer].Roles += ("SQLServer" -join ', ')
+try {
+    $hostRoles[$SQLServer].Roles += ("SQLServer" -join ', ')
+} catch {
+    Write-Warning "SQLServer is $SQLServer."
+    }
+
 
 # Calculate requirements based on aggregated resources for multi-role servers
 foreach ($server in $hostRoles.GetEnumerator()) {
@@ -434,4 +439,4 @@ $RequirementsComparison | Export-Csv -Path "$ExportPath\RequirementsComparison.c
 $OptimizedConfiguration | Export-Csv -Path "$ExportPath\OptimizedConfiguration.csv" -NoTypeInformation
 $SuboptimalConfiguration | Export-Csv -Path "$ExportPath\SuboptimalConfiguration.csv" -NoTypeInformation
 
-Write-Host "Data exported to CSV files successfully." 
+Write-Host "Data exported to CSV files successfully."  
