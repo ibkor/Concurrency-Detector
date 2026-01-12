@@ -363,14 +363,14 @@ foreach ($server in $hostRoles.GetEnumerator()) {
 
     $RequirementComparison = [PSCustomObject]@{
         "Server"          = $serverName
-        "Type"            = ($server.Value.Roles -join '; ')
+        "Type"            = ($server.Value.Roles -join '/ ')
         "Required Cores"  = $RequiredCores
         "Available Cores" = $coresAvailable
         "Required RAM (GB)" = $RequiredRAM
         "Available RAM (GB)" = $ramAvailable
         "Concurrent Tasks" = $totalTasks
         "Suggested Tasks"  = $MaxSuggestedTasks
-        "Names"           = ($server.Value.Names -join '; ')
+        "Names"           = ($server.Value.Names -join '/ ')
     }
     $RequirementsComparison += $RequirementComparison
 }
@@ -396,7 +396,7 @@ $multiRoleServers = $hostRoles.GetEnumerator() | Where-Object { $_.Value.Roles.C
 
 if ($multiRoleServers) {
     $multiRoleServers | ForEach-Object {
-        Write-Host "$($_.Key) has roles: $($_.Value.Roles -join '; ') - Names: $($_.Value.Names -join '; ')"
+        Write-Host "$($_.Key) has roles: $($_.Value.Roles -join '/ ') - Names: $($_.Value.Names -join '/ ')"
     }
 } else {
     Write-Host "No servers are being used for multiple roles."
@@ -437,14 +437,14 @@ if ($SuboptimalConfiguration.Count -gt 0) {
 }
 
 # Exporting the data to CSV files
-$RepoData | Export-Csv -Path "$ExportPath\Repositories.csv" -NoTypeInformation
-$GWData | Export-Csv -Path "$ExportPath\Gateways.csv" -NoTypeInformation
-$ProxyData | Export-Csv -Path "$ExportPath\Proxies.csv" -NoTypeInformation
-$CDPProxyData | Export-Csv -Path "$ExportPath\CDPProxies.csv" -NoTypeInformation
-$RequirementsComparison | Export-Csv -Path "$ExportPath\RequirementsComparison.csv" -NoTypeInformation
+$RepoData | Export-Csv -Path "$ExportPath\Repositories.csv" -Delimiter "," -NoTypeInformation
+$GWData | Export-Csv -Path "$ExportPath\Gateways.csv" -Delimiter "," -NoTypeInformation
+$ProxyData | Export-Csv -Path "$ExportPath\Proxies.csv" -Delimiter "," -NoTypeInformation
+$CDPProxyData | Export-Csv -Path "$ExportPath\CDPProxies.csv" -Delimiter "," -NoTypeInformation
+$RequirementsComparison | Export-Csv -Path "$ExportPath\RequirementsComparison.csv" -Delimiter "," -NoTypeInformation
 
 # Exporting the separated configurations to CSV files for optimized, underconfigured, and suboptimal
-$OptimizedConfiguration | Export-Csv -Path "$ExportPath\OptimizedConfiguration.csv" -NoTypeInformation
-$SuboptimalConfiguration | Export-Csv -Path "$ExportPath\SuboptimalConfiguration.csv" -NoTypeInformation
+$OptimizedConfiguration | Export-Csv -Path "$ExportPath\OptimizedConfiguration.csv" -Delimiter "," -NoTypeInformation
+$SuboptimalConfiguration | Export-Csv -Path "$ExportPath\SuboptimalConfiguration.csv" -Delimiter "," -NoTypeInformation
 
-Write-Host "Data exported to CSV files successfully."  
+Write-Host "Data exported to CSV files successfully."   
