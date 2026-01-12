@@ -1,4 +1,6 @@
 # This project is licensed under the MIT License - see the LICENSE file for details.
+$ExportPath = "C:\csv"
+
 #Connect to VBR
 $creds = Get-Credential
 Connect-VBRServer -Credential $creds -Server "Your VBR Server"
@@ -418,17 +420,18 @@ if ($SuboptimalConfiguration.Count -gt 0) {
 
 # Exporting the data to CSV files
 
-$RepoData | Export-Csv -Path "C:\csv\Repositories.csv" -NoTypeInformation
-$GWData | Export-Csv -Path "C:\csv\Gateways.csv" -NoTypeInformation
-$ProxyData | Export-Csv -Path "C:\csv\Proxies.csv" -NoTypeInformation
-$CDPProxyData | Export-Csv -Path "C:\csv\CDPProxies.csv" -NoTypeInformation
-$RequirementsComparison | Export-Csv -Path "C:\csv\RequirementsComparison.csv" -NoTypeInformation
+$RepoData | Export-Csv -Path "$ExportPath\Repositories.csv" -NoTypeInformation
+$GWData | Export-Csv -Path "$ExportPath\Gateways.csv" -NoTypeInformation
+$ProxyData | Export-Csv -Path "$ExportPath\Proxies.csv" -NoTypeInformation
+$CDPProxyData | Export-Csv -Path "$ExportPath\CDPProxies.csv" -NoTypeInformation
+$RequirementsComparison | Export-Csv -Path "$ExportPath\RequirementsComparison.csv" -NoTypeInformation
 
 # Exporting the separated configurations to CSV files for optimized, underconfigured, and suboptimal
-$OptimizedConfiguration | Export-Csv -Path "C:\csv\OptimizedConfiguration.csv" -NoTypeInformation
-$SuboptimalConfiguration | Export-Csv -Path "C:\csv\SuboptimalConfiguration.csv" -NoTypeInformation
+$OptimizedConfiguration | Export-Csv -Path "$ExportPath\OptimizedConfiguration.csv" -NoTypeInformation
+$SuboptimalConfiguration | Export-Csv -Path "$ExportPath\SuboptimalConfiguration.csv" -NoTypeInformation
 
 Write-Host "Data exported to CSV files successfully."
  
+
 
 
