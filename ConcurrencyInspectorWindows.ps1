@@ -1,8 +1,5 @@
-# This project is licensed under the MIT License - see the LICENSE file for details. 
-$ExportPath = "/tmp/csv"
- 
- #import module
-Import-Module /opt/veeam/powershell/Veeam.Backup.PowerShell/Veeam.Backup.PowerShell.psd1
+# This project is licensed under the MIT License - see the LICENSE file for details.
+$ExportPath = "C:\csv"   #change if needed
 
 #Connect to VBR
 $creds = Get-Credential
@@ -37,6 +34,8 @@ if ($userResponse -eq 'y') {
     Write-Host "Skipping rescan. Using existing data."
 }
 
+$BackupServerInfo = Get-VBRBackupServerInfo
+
 #Get all VMware proxies
 $VMwareProxies = Get-VBRViProxy
 
@@ -58,6 +57,41 @@ $RepoData = @()
 $GPProxyData = @()
 $RequirementsComparison = @()
 $hostRoles = @{}
+
+#Get SQL Server Host
+function Get-SqlSName {
+    # Define registry paths and keys
+    $basePath = "HKLM:\SOFTWARE\Veeam\Veeam Backup and Replication"
+    $databaseConfigurationPath = "$basePath\DatabaseConfigurations"
+    $sqlActiveConfigurationKey = "SqlActiveConfiguration"
+    $postgreSqlPath = "$databaseConfigurationPath\PostgreSql"
+    $msSqlPath = "$databaseConfigurationPath\MsSql"
+    $sqlServerNameKey = "SqlServerName"
+    $sqlHostNameKey = "SqlHostName"
+    $SQLSName = $null
+
+    try {
+        $SQLSName = (Get-ItemProperty -Path $basePath -Name $sqlServerNameKey -ErrorAction Stop).SqlServerName
+    } catch {
+        try {
+            $sqlActiveConfig = Get-ItemProperty -Path $databaseConfigurationPath -Name $sqlActiveConfigurationKey -ErrorAction Stop
+            $activeConfigValue = $sqlActiveConfig.$sqlActiveConfigurationKey
+
+            if ($activeConfigValue -eq "PostgreSql") {
+                $SQLSName = (Get-ItemProperty -Path $postgreSqlPath -Name $sqlHostNameKey -ErrorAction Stop).SqlHostName
+            } else {
+                $SQLSName = (Get-ItemProperty -Path $msSqlPath -Name $sqlServerNameKey -ErrorAction Stop).SqlServerName
+            }
+        } catch {
+            Write-Error "Unable to retrieve SQL Server name from registry."
+        }
+    }
+
+    If ($SQLSName -eq "localhost") {
+        $SQLSName = $BackupServerName
+    }
+return $SQLSName
+}
 
 function ConverttoGB ($inBytes) {
     $inGB = [math]::Floor($inBytes / 1GB)
@@ -210,7 +244,6 @@ foreach ($Repository in $VBRRepositories) {
                 $hostRoles[$gatewayServer.Name].Roles += "Gateway"
                 $hostRoles[$gatewayServer.Name].Names += $Repository.Name
             }
-
             if ($NrofRepositoryTasks -ne -1) {
             $hostRoles[$gatewayServer.Name].TotalGWTasks += $NrofRepositoryTasks
             $hostRoles[$gatewayServer.Name].TotalTasks += $NrofRepositoryTasks
@@ -218,7 +251,6 @@ foreach ($Repository in $VBRRepositories) {
              $hostRoles[$gatewayServer.Name].TotalGWTasks += 128
             $hostRoles[$gatewayServer.Name].TotalTasks += 128
             }
-
         }
     } else {
         # Handle the repository host
@@ -261,6 +293,14 @@ foreach ($Repository in $VBRRepositories) {
 
 $hostRoles[$BackupServerName].Roles += ("BackupServer" -join ', ')
 
+$SQLServer = Get-SqlSName
+try {
+    $hostRoles[$SQLServer].Roles += ("SQLServer" -join ', ')
+} catch {
+    Write-Host "SQLServer is $SQLServer."
+    }
+
+
 # Calculate requirements based on aggregated resources for multi-role servers
 foreach ($server in $hostRoles.GetEnumerator()) {
     $SuggestedTasksByCores = 0 
@@ -292,11 +332,23 @@ foreach ($server in $hostRoles.GetEnumerator()) {
         $SuggestionRAM += -8
     }
    
-    if ($serverName -contains $BackupServerName) {
-        $RequiredCores += 8  #CPU core requirement for Backup Server v13 added
-        $RequiredRAM += 16    #RAM requirement for Backup Server v13 added
+    if ($serverName -contains $BackupServerName -and $BackupServerInfo.Build.Major -eq "13") {
+        $RequiredCores += 8  #CPU core requirement for Backup Server added
+        $RequiredRAM += 16    #RAM requirement for Backup Server added
         $SuggestionCores += -8
         $SuggestionRAM += -16
+    } elseif ($serverName -contains $BackupServerName -and $BackupServerInfo.Build.Major -lt "13") {
+        $RequiredCores += 4  #CPU core requirement for Backup Server added
+        $RequiredRAM += 8    #RAM requirement for Backup Server added
+        $SuggestionCores += -4
+        $SuggestionRAM += -8
+    }
+
+    if ($SQLServer -eq $serverName) {
+        $RequiredCores += 1  #min CPU core requirement for SQL Server added
+        $RequiredRAM += 1    #min RAM requirement for SQL Server added
+        $SuggestionCores += -1
+        $SuggestionRAM += -1
     }
 
     $SuggestedTasksByCores += $SuggestionCores*2
@@ -355,6 +407,7 @@ Write-Host "Requirements Comparison:"
 # Separate the outputs into optimized, underconfigured, and suboptimal configurations based on the comparison
 $OptimizedConfiguration = @()
 $SuboptimalConfiguration = @()
+$UnderconfiguredConfiguration = @()
 
 foreach ($req in $RequirementsComparison) {
 
@@ -383,17 +436,14 @@ if ($SuboptimalConfiguration.Count -gt 0) {
 }
 
 # Exporting the data to CSV files
-
-$RepoData | Export-Csv -Path "$ExportPath/Repositories.csv" -NoTypeInformation
-$GWData | Export-Csv -Path "$ExportPath/Gateways.csv" -NoTypeInformation
-$ProxyData | Export-Csv -Path "$ExportPath/Proxies.csv" -NoTypeInformation
-$CDPProxyData | Export-Csv -Path "$ExportPath/CDPProxies.csv" -NoTypeInformation
-$GPProxyData | Export-Csv -Path "$ExportPath/GPProxies.csv" -NoTypeInformation
-$RequirementsComparison | Export-Csv -Path "$ExportPath/RequirementsComparison.csv" -NoTypeInformation
+$RepoData | Export-Csv -Path "$ExportPath\Repositories.csv" -Delimiter "," -NoTypeInformation
+$GWData | Export-Csv -Path "$ExportPath\Gateways.csv" -Delimiter "," -NoTypeInformation
+$ProxyData | Export-Csv -Path "$ExportPath\Proxies.csv" -Delimiter "," -NoTypeInformation
+$CDPProxyData | Export-Csv -Path "$ExportPath\CDPProxies.csv" -Delimiter "," -NoTypeInformation
+$RequirementsComparison | Export-Csv -Path "$ExportPath\RequirementsComparison.csv" -Delimiter "," -NoTypeInformation
 
 # Exporting the separated configurations to CSV files for optimized, underconfigured, and suboptimal
-$OptimizedConfiguration | Export-Csv -Path "$ExportPath/OptimizedConfiguration.csv" -NoTypeInformation
-$SuboptimalConfiguration | Export-Csv -Path "$ExportPath/SuboptimalConfiguration.csv" -NoTypeInformation
+$OptimizedConfiguration | Export-Csv -Path "$ExportPath\OptimizedConfiguration.csv" -Delimiter "," -NoTypeInformation
+$SuboptimalConfiguration | Export-Csv -Path "$ExportPath\SuboptimalConfiguration.csv" -Delimiter "," -NoTypeInformation
 
-Write-Host "Data exported to CSV files successfully."
-  
+Write-Host "Data exported to CSV files successfully."   
