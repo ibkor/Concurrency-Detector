@@ -1,4 +1,4 @@
- # This project is licensed under the MIT License - see the LICENSE file for details.
+# This project is licensed under the MIT License - see the LICENSE file for details.
 $ExportPath = "C:\csv"   #change if needed
 
 #Connect to VBR
@@ -244,9 +244,14 @@ foreach ($Repository in $VBRRepositories) {
                 $hostRoles[$gatewayServer.Name].Roles += "Gateway"
                 $hostRoles[$gatewayServer.Name].Names += $Repository.Name
             }
+                if ($NrofRepositoryTasks -ne -1) {
+
             $hostRoles[$gatewayServer.Name].TotalGWTasks += $NrofRepositoryTasks
             $hostRoles[$gatewayServer.Name].TotalTasks += $NrofRepositoryTasks
-
+            }else {
+             $hostRoles[$gatewayServer.Name].TotalGWTasks += 128
+            $hostRoles[$gatewayServer.Name].TotalTasks += 128
+            }
         }
     } else {
         # Handle the repository host
@@ -277,9 +282,13 @@ foreach ($Repository in $VBRRepositories) {
             $hostRoles[$Repository.Host.Name].Roles += "Repository"
             $hostRoles[$Repository.Host.Name].Names += $Repository.Name
         }
+         if ($NrofRepositoryTasks -ne -1) {
         $hostRoles[$Repository.Host.Name].TotalRepoTasks += $NrofRepositoryTasks
         $hostRoles[$Repository.Host.Name].TotalTasks += $NrofRepositoryTasks
-
+        } else {
+         $hostRoles[$Repository.Host.Name].TotalRepoTasks += 128
+        $hostRoles[$Repository.Host.Name].TotalTasks += 128
+        }
     }
 }
 
@@ -428,7 +437,6 @@ if ($SuboptimalConfiguration.Count -gt 0) {
 }
 
 # Exporting the data to CSV files
-
 $RepoData | Export-Csv -Path "$ExportPath\Repositories.csv" -NoTypeInformation
 $GWData | Export-Csv -Path "$ExportPath\Gateways.csv" -NoTypeInformation
 $ProxyData | Export-Csv -Path "$ExportPath\Proxies.csv" -NoTypeInformation
@@ -440,4 +448,3 @@ $OptimizedConfiguration | Export-Csv -Path "$ExportPath\OptimizedConfiguration.c
 $SuboptimalConfiguration | Export-Csv -Path "$ExportPath\SuboptimalConfiguration.csv" -NoTypeInformation
 
 Write-Host "Data exported to CSV files successfully."  
-
