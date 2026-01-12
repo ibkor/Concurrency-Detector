@@ -1,4 +1,4 @@
-# This project is licensed under the MIT License - see the LICENSE file for details. 
+ # This project is licensed under the MIT License - see the LICENSE file for details. 
 $ExportPath = "/tmp/csv"
  
  #import module
@@ -210,8 +210,14 @@ foreach ($Repository in $VBRRepositories) {
                 $hostRoles[$gatewayServer.Name].Roles += "Gateway"
                 $hostRoles[$gatewayServer.Name].Names += $Repository.Name
             }
+
+            if ($NrofRepositoryTasks -ne -1) {
             $hostRoles[$gatewayServer.Name].TotalGWTasks += $NrofRepositoryTasks
             $hostRoles[$gatewayServer.Name].TotalTasks += $NrofRepositoryTasks
+            }else {
+             $hostRoles[$gatewayServer.Name].TotalGWTasks += 128
+            $hostRoles[$gatewayServer.Name].TotalTasks += 128
+            }
 
         }
     } else {
@@ -243,9 +249,13 @@ foreach ($Repository in $VBRRepositories) {
             $hostRoles[$Repository.Host.Name].Roles += "Repository"
             $hostRoles[$Repository.Host.Name].Names += $Repository.Name
         }
+        if ($NrofRepositoryTasks -ne -1) {
         $hostRoles[$Repository.Host.Name].TotalRepoTasks += $NrofRepositoryTasks
         $hostRoles[$Repository.Host.Name].TotalTasks += $NrofRepositoryTasks
-
+        } else {
+         $hostRoles[$Repository.Host.Name].TotalRepoTasks += 128
+        $hostRoles[$Repository.Host.Name].TotalTasks += 128
+        }
     }
 }
 
@@ -300,14 +310,14 @@ foreach ($server in $hostRoles.GetEnumerator()) {
 
     $RequirementComparison = [PSCustomObject]@{
         "Server"          = $serverName
-        "Type"            = ($server.Value.Roles -join '; ')
+        "Type"            = ($server.Value.Roles -join '/ ')
         "Required Cores"  = $RequiredCores
         "Available Cores" = $coresAvailable
         "Required RAM (GB)" = $RequiredRAM
         "Available RAM (GB)" = $ramAvailable
         "Concurrent Tasks" = $totalTasks
         "Suggested Tasks"  = $MaxSuggestedTasks
-        "Names"           = ($server.Value.Names -join '; ')
+        "Names"           = ($server.Value.Names -join '/ ')
     }
     $RequirementsComparison += $RequirementComparison
 }
@@ -333,7 +343,7 @@ $multiRoleServers = $hostRoles.GetEnumerator() | Where-Object { $_.Value.Roles.C
 
 if ($multiRoleServers) {
     $multiRoleServers | ForEach-Object {
-        Write-Host "$($_.Key) has roles: $($_.Value.Roles -join '; ') - Names: $($_.Value.Names -join '; ')"
+        Write-Host "$($_.Key) has roles: $($_.Value.Roles -join '/ ') - Names: $($_.Value.Names -join '/ ')"
     }
 } else {
     Write-Host "No servers are being used for multiple roles."
@@ -386,4 +396,4 @@ $OptimizedConfiguration | Export-Csv -Path "$ExportPath/OptimizedConfiguration.c
 $SuboptimalConfiguration | Export-Csv -Path "$ExportPath/SuboptimalConfiguration.csv" -NoTypeInformation
 
 Write-Host "Data exported to CSV files successfully."
- 
+  
