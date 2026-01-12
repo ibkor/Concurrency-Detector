@@ -1,5 +1,5 @@
-# This project is licensed under the MIT License - see the LICENSE file for details.
-$ExportPath = "C:\csv"
+ # This project is licensed under the MIT License - see the LICENSE file for details.
+$ExportPath = "C:\csv"   #change if needed
 
 #Connect to VBR
 $creds = Get-Credential
@@ -34,6 +34,8 @@ if ($userResponse -eq 'y') {
     Write-Host "Skipping rescan. Using existing data."
 }
 
+$BackupServerInfo = Get-VBRBackupServerInfo
+
 #Get all VMware proxies
 $VMwareProxies = Get-VBRViProxy
 
@@ -58,36 +60,36 @@ $hostRoles = @{}
 
 #Get SQL Server Host
 function Get-SqlSName {
+    # Define registry paths and keys
+    $basePath = "HKLM:\SOFTWARE\Veeam\Veeam Backup and Replication"
+    $databaseConfigurationPath = "$basePath\DatabaseConfigurations"
+    $sqlActiveConfigurationKey = "SqlActiveConfiguration"
+    $postgreSqlPath = "$databaseConfigurationPath\PostgreSql"
+    $msSqlPath = "$databaseConfigurationPath\MsSql"
+    $sqlServerNameKey = "SqlServerName"
+    $sqlHostNameKey = "SqlHostName"
+    $SQLSName = $null
 
-# Define registry paths and keys
-$basePath = "HKLM:\SOFTWARE\Veeam\Veeam Backup and Replication"
-$databaseConfigurationPath = "$basePath\DatabaseConfigurations"
-$sqlActiveConfigurationKey = "SqlActiveConfiguration"
-$postgreSqlPath = "$databaseConfigurationPath\PostgreSql"
-$msSqlPath = "$databaseConfigurationPath\MsSql"
-$SQLSName = ""
-
-try {
-    $SQLSName = (Get-ItemProperty -Path $basePath -Name $sqlServerNameKey -ErrorAction Stop).SqlServerName
-} catch {
     try {
-        $sqlActiveConfig = Get-ItemProperty -Path $databaseConfigurationPath -Name $sqlActiveConfigurationKey -ErrorAction Stop
-        $activeConfigValue = $sqlActiveConfig.$sqlActiveConfigurationKey
-
-        if ($activeConfigValue -eq "PostgreSql") {
-            $SQLSName = (Get-ItemProperty -Path $postgreSqlPath -Name $sqlHostNameKey -ErrorAction Stop).SqlHostName
-        } else {            
-            $SQLSName = (Get-ItemProperty -Path $msSqlPath -Name $sqlServerNameKey -ErrorAction Stop).SqlHostName
-        }
+        $SQLSName = (Get-ItemProperty -Path $basePath -Name $sqlServerNameKey -ErrorAction Stop).SqlServerName
     } catch {
-        Write-Error "Unable to retrieve SQL Server name from registry."
+        try {
+            $sqlActiveConfig = Get-ItemProperty -Path $databaseConfigurationPath -Name $sqlActiveConfigurationKey -ErrorAction Stop
+            $activeConfigValue = $sqlActiveConfig.$sqlActiveConfigurationKey
+
+            if ($activeConfigValue -eq "PostgreSql") {
+                $SQLSName = (Get-ItemProperty -Path $postgreSqlPath -Name $sqlHostNameKey -ErrorAction Stop).SqlHostName
+            } else {
+                $SQLSName = (Get-ItemProperty -Path $msSqlPath -Name $sqlServerNameKey -ErrorAction Stop).SqlServerName
+            }
+        } catch {
+            Write-Error "Unable to retrieve SQL Server name from registry."
+        }
     }
-}
 
-If ($SQLSName -eq "localhost") {
-    $SQLSName = $BackupServerName
-}
-
+    If ($SQLSName -eq "localhost") {
+        $SQLSName = $BackupServerName
+    }
 return $SQLSName
 }
 
@@ -282,10 +284,9 @@ foreach ($Repository in $VBRRepositories) {
 }
 
 $hostRoles[$BackupServerName].Roles += ("BackupServer" -join ', ')
-$i = 0
-$j = 0
 
 $SQLServer = Get-SqlSName
+$hostRoles[$SQLServer].Roles += ("SQLServer" -join ', ')
 
 # Calculate requirements based on aggregated resources for multi-role servers
 foreach ($server in $hostRoles.GetEnumerator()) {
@@ -318,12 +319,16 @@ foreach ($server in $hostRoles.GetEnumerator()) {
         $SuggestionRAM += -8
     }
    
-    if ($serverName -contains $BackupServerName) {
+    if ($serverName -contains $BackupServerName -and $BackupServerInfo.Build.Major -eq "13") {
+        $RequiredCores += 8  #CPU core requirement for Backup Server added
+        $RequiredRAM += 16    #RAM requirement for Backup Server added
+        $SuggestionCores += -8
+        $SuggestionRAM += -16
+    } elseif ($serverName -contains $BackupServerName -and $BackupServerInfo.Build.Major -lt "13") {
         $RequiredCores += 4  #CPU core requirement for Backup Server added
         $RequiredRAM += 8    #RAM requirement for Backup Server added
         $SuggestionCores += -4
         $SuggestionRAM += -8
-        $j++
     }
 
     if ($SQLServer -eq $serverName) {
@@ -331,7 +336,6 @@ foreach ($server in $hostRoles.GetEnumerator()) {
         $RequiredRAM += 1    #min RAM requirement for SQL Server added
         $SuggestionCores += -1
         $SuggestionRAM += -1
-        $i++
     }
 
     $SuggestedTasksByCores += $SuggestionCores*2
@@ -430,8 +434,4 @@ $RequirementsComparison | Export-Csv -Path "$ExportPath\RequirementsComparison.c
 $OptimizedConfiguration | Export-Csv -Path "$ExportPath\OptimizedConfiguration.csv" -NoTypeInformation
 $SuboptimalConfiguration | Export-Csv -Path "$ExportPath\SuboptimalConfiguration.csv" -NoTypeInformation
 
-Write-Host "Data exported to CSV files successfully."
- 
-
-
-
+Write-Host "Data exported to CSV files successfully." 
