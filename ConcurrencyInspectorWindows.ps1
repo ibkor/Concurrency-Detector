@@ -289,7 +289,7 @@ $SQLServer = Get-SqlSName
 try {
     $hostRoles[$SQLServer].Roles += ("SQLServer" -join ', ')
 } catch {
-    Write-Warning "SQLServer is $SQLServer."
+    Write-Host "SQLServer is $SQLServer."
     }
 
 
@@ -440,3 +440,4 @@ $OptimizedConfiguration | Export-Csv -Path "$ExportPath\OptimizedConfiguration.c
 $SuboptimalConfiguration | Export-Csv -Path "$ExportPath\SuboptimalConfiguration.csv" -NoTypeInformation
 
 Write-Host "Data exported to CSV files successfully."  
+
