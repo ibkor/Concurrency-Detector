@@ -1,4 +1,4 @@
-# This project is licensed under the MIT License - see the LICENSE file for details.
+# This project is licensed under the MIT License - see the LICENSE file for details. 
 $ExportPath = "/tmp/csv"
  
  #import module
@@ -250,8 +250,6 @@ foreach ($Repository in $VBRRepositories) {
 }
 
 $hostRoles[$BackupServerName].Roles += ("BackupServer" -join ', ')
-$i = 0
-$j = 0
 
 # Calculate requirements based on aggregated resources for multi-role servers
 foreach ($server in $hostRoles.GetEnumerator()) {
@@ -289,7 +287,6 @@ foreach ($server in $hostRoles.GetEnumerator()) {
         $RequiredRAM += 16    #RAM requirement for Backup Server v13 added
         $SuggestionCores += -8
         $SuggestionRAM += -16
-        $j++
     }
 
     $SuggestedTasksByCores += $SuggestionCores*2
@@ -389,3 +386,4 @@ $OptimizedConfiguration | Export-Csv -Path "$ExportPath/OptimizedConfiguration.c
 $SuboptimalConfiguration | Export-Csv -Path "$ExportPath/SuboptimalConfiguration.csv" -NoTypeInformation
 
 Write-Host "Data exported to CSV files successfully."
+ 
