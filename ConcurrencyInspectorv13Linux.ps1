@@ -190,12 +190,13 @@ foreach ($Proxy in $VPProxies) {
 
 # Gather CDP Proxy Data
 foreach ($CDPProxy in $CDPProxies) {
-    $Serv = Get-VBRServer -Name $CDPProxy.Name
-    $CDPProxyCores = $Serv.GetPhysicalHost().HardwareInfo.CoresCount
-    $CDPProxyRAM = ConverttoGB($Serv.GetPhysicalHost().HardwareInfo.PhysicalRAMTotal)
-    
+    $CDPServer = Get-VBRServer | Where-Object { $_.Id -eq $CDPProxy.ServerId }
+    $CDPProxyCores = $CDPServer.GetPhysicalHost().HardwareInfo.CoresCount
+    $CDPProxyRAM = ConverttoGB($CDPServer.GetPhysicalHost().HardwareInfo.PhysicalRAMTotal)
+        
     $CDPProxyDetails = [PSCustomObject]@{
-        "CDP Proxy Name"     = $CDPProxy.Name        
+        "CDP Proxy Name"     = $CDPProxy.Name    
+        "CDP Proxy Server"   = $CDPServer.Name
         "CDP Proxy Cores"    = $CDPProxyCores
         "CDP Proxy RAM (GB)" = $CDPProxyRAM
     }
@@ -203,20 +204,20 @@ foreach ($CDPProxy in $CDPProxies) {
     $CDPProxyData += $CDPProxyDetails
 
     # Track host roles with CDPProxy.Name
-    if (-not $hostRoles.ContainsKey($CDPProxy.Name)) {
+    if (-not $hostRoles.ContainsKey($CDPServer.Name)) {
         $hostRoles[$CDPProxy.Name] = [ordered]@{
             "Roles" = @("CDPProxy")
-            "Names" = @($CDPProxy.Name)
+            "Names" = @($CDPProxy.Name)  
             "TotalTasks" = 0
             "Cores" = $CDPProxyCores
             "RAM" = $CDPProxyRAM
             "TotalCDPProxyTasks" = 0
         }
     } else {
-        $hostRoles[$CDPProxy.Name].Roles += "CDPProxy"
-        $hostRoles[$CDPProxy.Name].Names += $CDPProxy.Name         
+        $hostRoles[$CDPServer.Name].Roles += "CDPProxy"
+        $hostRoles[$CDPServer.Name].Names += $CDPProxy.Name 
     }
-    $hostRoles[$CDPProxy.Name].TotalCDPProxyTasks += 1
+    $hostRoles[$CDPServer.Name].TotalCDPProxyTasks += 1
 }
 
 # Gather Repository and Gateway Data
