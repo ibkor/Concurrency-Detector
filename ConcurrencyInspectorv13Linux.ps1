@@ -207,17 +207,17 @@ foreach ($CDPProxy in $CDPProxies) {
     if (-not $hostRoles.ContainsKey($CDPServer.Name)) {
         $hostRoles[$CDPServer.Name] = [ordered]@{
             "Roles" = @("CDPProxy")
-            "Names" = @($CDPServer.Name)  
+            "Names" = @($CDPProxy.Name)  
             "TotalTasks" = 0
             "Cores" = $CDPProxyCores
             "RAM" = $CDPProxyRAM
-            "TotalCDPProxyTasks" = 0
+            "TotalCDPProxyTasks" = 1
         }
     } else {
         $hostRoles[$CDPServer.Name].Roles += "CDPProxy"
-        $hostRoles[$CDPServer.Name].Names += $CDPServer.Name 
+        $hostRoles[$CDPServer.Name].Names += $CDPProxy.Name 
+        $hostRoles[$CDPServer.Name].TotalCDPProxyTasks += 1
     }
-    $hostRoles[$CDPServer.Name].TotalCDPProxyTasks += 1
 }
 
 # Gather Repository and Gateway Data
