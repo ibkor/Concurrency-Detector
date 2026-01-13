@@ -246,11 +246,11 @@ foreach ($CDPProxy in $CDPProxies) {
 
     $CDPProxyData += $CDPProxyDetails
 
-    # Track host roles with CDPServer.Name
+    # Track host roles with CDPProxy.Name
     if (-not $hostRoles.ContainsKey($CDPServer.Name)) {
         $hostRoles[$CDPServer.Name] = [ordered]@{
             "Roles" = @("CDPProxy")
-            "Names" = @($CDPServer.Name)  
+            "Names" = @($CDPProxy.Name)  
             "TotalTasks" = 0
             "Cores" = $CDPProxyCores
             "RAM" = $CDPProxyRAM
@@ -258,7 +258,7 @@ foreach ($CDPProxy in $CDPProxies) {
         }
     } else {
         $hostRoles[$CDPServer.Name].Roles += "CDPProxy"
-        $hostRoles[$CDPServer.Name].Names += $CDPServer.Name 
+        $hostRoles[$CDPServer.Name].Names += $CDPProxy.Name 
     }
     $hostRoles[$CDPServer.Name].TotalCDPProxyTasks += 1
 }
@@ -382,32 +382,23 @@ foreach ($server in $hostRoles.GetEnumerator()) {
     $totalTasks = $server.Value.TotalTasks
     
     #suggestion cores / RAM are only to calculate the suggested nr of tasks. 
-    $SuggestionCores = $coresAvailable
-    $SuggestionRAM = [Math]::Ceiling(
+    $SuggestedTasksByCores = $coresAvailable
+    $SuggestedTasksByRAM = [Math]::Ceiling(
      (SafeValue $ramAvailable) -
-     (SafeValue $server.Value.TotalGPProxyTasks*$GPProxyRAMReq) -
-     (SafeValue $server.Value.TotalCDPProxyTasks*$CDPProxyRAMReq)
+     (SafeValue $server.Value.TotalGPProxyTasks) *  $GPProxyRAMReq -
+     (SafeValue $server.Value.TotalCDPProxyTasks) * $CDPProxyRAMReq
     )
    
     if ($serverName -contains $BackupServerName) {
         $RequiredCores += $BSCPUReq  #CPU core requirement for Backup Server added
         $RequiredRAM += $BSRAMReq    #RAM requirement for Backup Server added
-        $SuggestionCores -= $BSCPUReq
-        $SuggestionRAM -= $BSRAMReq
+        $SuggestedTasksByCores -= $BSCPUReq
+        $SuggestedTasksByRAM -= $BSRAMReq
     }
 
-    if ($SQLServer -eq $serverName) {
-        $RequiredCores += $SQLCPUReq  #min CPU core requirement for SQL Server added
-        $RequiredRAM += $SQLRAMReq    #min RAM requirement for SQL Server added
-        $SuggestionCores -= $SQLCPUReq
-        $SuggestionRAM -= $SQLRAMReq
-    }
-
-    $SuggestedTasksByCores += $SuggestionCores*2
-    $SuggestedTasksByRAM += $SuggestionRAM  
-
-    $NonNegativeCores = EnsureNonNegative($SuggestedTasksByCores)
+    $NonNegativeCores = EnsureNonNegative($SuggestedTasksByCores*2)
     $NonNegativeRAM = EnsureNonNegative($SuggestedTasksByRAM)
+
 
     # Calculate the max suggested tasks using non-negative values
     $MaxSuggestedTasks = [Math]::Min($NonNegativeCores, $NonNegativeRAM)
