@@ -214,9 +214,9 @@ foreach ($CDPProxy in $CDPProxies) {
         }
     } else {
         $hostRoles[$CDPProxy.Name].Roles += "CDPProxy"
-        $hostRoles[$CDPProxy.Name].Names += $CDPProxy.Name 
-        $hostRoles[$CDPProxy.Name].TotalCDPProxyTasks += 1
+        $hostRoles[$CDPProxy.Name].Names += $CDPProxy.Name         
     }
+    $hostRoles[$CDPProxy.Name].TotalCDPProxyTasks += 1
 }
 
 # Gather Repository and Gateway Data
