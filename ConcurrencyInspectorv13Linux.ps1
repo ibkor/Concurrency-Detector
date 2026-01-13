@@ -218,7 +218,6 @@ foreach ($CDPProxy in $CDPProxies) {
         $hostRoles[$CDPServer.Name].Names += $CDPProxy.Name 
     }
     $hostRoles[$CDPServer.Name].TotalCDPProxyTasks += 1
-    Write-warning $hostRoles[$CDPServer.Name].TotalCDPProxyTasks $CDPServer.Name
 }
 
 # Gather Repository and Gateway Data
@@ -302,6 +301,11 @@ foreach ($Repository in $VBRRepositories) {
         $hostRoles[$Repository.Host.Name].TotalTasks += 128
         }
     }
+}
+
+Write-Host "CDP Proxy HostRoles:"
+$hostRoles.GetEnumerator() | ForEach-Object {
+    Write-Host "$($_.Key): TotalCDPProxyTasks=$($_.Value.TotalCDPProxyTasks)"
 }
 
 $hostRoles[$BackupServerName].Roles += ("BackupServer" -join ', ')
