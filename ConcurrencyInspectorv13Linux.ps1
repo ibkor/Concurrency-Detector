@@ -333,24 +333,21 @@ foreach ($server in $hostRoles.GetEnumerator()) {
     $totalTasks = $server.Value.TotalTasks
     
     #suggestion cores / RAM are only to calculate the suggested nr of tasks. 
-    $SuggestionCores = $coresAvailable
-    $SuggestionRAM = [Math]::Ceiling(
+    $SuggestedTasksByCores = $coresAvailable
+    $SuggestedTasksByRAM = [Math]::Ceiling(
      (SafeValue $ramAvailable) -
-     (SafeValue $server.Value.TotalGPProxyTasks*$GPProxyRAMReq) -
-     (SafeValue $server.Value.TotalCDPProxyTasks*$CDPProxyRAMReq)
+     (SafeValue $server.Value.TotalGPProxyTasks) *  $GPProxyRAMReq -
+     (SafeValue $server.Value.TotalCDPProxyTasks) * $CDPProxyRAMReq
     )
    
     if ($serverName -contains $BackupServerName) {
         $RequiredCores += $BSCPUReq  #CPU core requirement for Backup Server added
         $RequiredRAM += $BSRAMReq    #RAM requirement for Backup Server added
-        $SuggestionCores -= $BSCPUReq
-        $SuggestionRAM -= $BSRAMReq
+        $SuggestedTasksByCores -= $BSCPUReq
+        $SuggestedTasksByRAM -= $BSRAMReq
     }
 
-    $SuggestedTasksByCores += $SuggestionCores*2
-    $SuggestedTasksByRAM += $SuggestionRAM  
-
-    $NonNegativeCores = EnsureNonNegative($SuggestedTasksByCores)
+    $NonNegativeCores = EnsureNonNegative($SuggestedTasksByCores*2)
     $NonNegativeRAM = EnsureNonNegative($SuggestedTasksByRAM)
 
     # Calculate the max suggested tasks using non-negative values
