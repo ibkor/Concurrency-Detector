@@ -246,11 +246,11 @@ foreach ($CDPProxy in $CDPProxies) {
 
     $CDPProxyData += $CDPProxyDetails
 
-    # Track host roles with CDPProxy.Name
+    # Track host roles with CDPServer.Name
     if (-not $hostRoles.ContainsKey($CDPServer.Name)) {
-        $hostRoles[$CDPProxy.Name] = [ordered]@{
+        $hostRoles[$CDPServer.Name] = [ordered]@{
             "Roles" = @("CDPProxy")
-            "Names" = @($CDPProxy.Name)  
+            "Names" = @($CDPServer.Name)  
             "TotalTasks" = 0
             "Cores" = $CDPProxyCores
             "RAM" = $CDPProxyRAM
@@ -258,7 +258,7 @@ foreach ($CDPProxy in $CDPProxies) {
         }
     } else {
         $hostRoles[$CDPServer.Name].Roles += "CDPProxy"
-        $hostRoles[$CDPServer.Name].Names += $CDPProxy.Name 
+        $hostRoles[$CDPServer.Name].Names += $CDPServer.Name 
     }
     $hostRoles[$CDPServer.Name].TotalCDPProxyTasks += 1
 }
