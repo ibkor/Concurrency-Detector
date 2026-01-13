@@ -178,13 +178,13 @@ foreach ($Proxy in $VPProxies) {
             "TotalTasks" = 0
             "Cores" = $ProxyCores
             "RAM" = $ProxyRAM
-            "TotalViProxyTasks" = 0
+            "TotalVpProxyTasks" = 0
         }
     } else {
         $hostRoles[$Proxy.Host.Name].Roles += "Proxy"
         $hostRoles[$Proxy.Host.Name].Names += $Proxy.Name
     }
-    $hostRoles[$Proxy.Host.Name].TotalViProxyTasks += $NrofProxyTasks
+    $hostRoles[$Proxy.Host.Name].TotalVpProxyTasks += $NrofProxyTasks
     $hostRoles[$Proxy.Host.Name].TotalTasks += $NrofProxyTasks
 }
 
@@ -303,11 +303,6 @@ foreach ($Repository in $VBRRepositories) {
     }
 }
 
-Write-Host "CDP Proxy HostRoles:"
-$hostRoles.GetEnumerator() | ForEach-Object {
-    Write-Host "$($_.Key): TotalCDPProxyTasks=$($_.Value.TotalCDPProxyTasks)"
-}
-
 $hostRoles[$BackupServerName].Roles += ("BackupServer" -join ', ')
 
 # Calculate requirements based on aggregated resources for multi-role servers
@@ -315,7 +310,6 @@ foreach ($server in $hostRoles.GetEnumerator()) {
     $SuggestedTasksByCores = 0 
     $SuggestedTasksByRAM = 0
     $serverName = $server.Key
-Write-Host "RepoTasks=$($server.Value.TotalRepoTasks) GWTasks=$($server.Value.TotalGWTasks) VpProxyTasks=$($server.Value.TotalVpProxyTasks) GPProxyTasks=$($server.Value.TotalGPProxyTasks) CDPProxyTasks=$($server.Value.TotalCDPProxyTasks)"
 
     $RequiredCores = [Math]::Ceiling(
         (SafeValue $server.Value.TotalRepoTasks)    * $RepoGWCPUReq +
