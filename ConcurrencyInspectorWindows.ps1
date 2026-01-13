@@ -1,9 +1,13 @@
 # This project is licensed under the MIT License - see the LICENSE file for details.
-$ExportPath = "C:\csv"   #change if needed
+# Requires Run as Administrator
+
+$ExportPath = "C:\temp\csv"   #change if needed
+
+$BackupServerName = [System.Net.Dns]::GetHostByName(($env:computerName)).HostName
 
 #Connect to VBR
 $creds = Get-Credential
-Connect-VBRServer -Credential $creds -Server "Your VBR Server"
+Connect-VBRServer -Credential $creds -Server $BackupServerName
 
 # Rescan all the host when needed
 function Get-UserResponse {
@@ -12,7 +16,7 @@ function Get-UserResponse {
 
     # Keep asking for input until a valid response is received
     while ($true) {
-        $promptMessage = "Would you like to rescan all hosts to ensure the data is up-to-date? Please enter 'y' for yes or 'n' for no:"
+        $promptMessage = "Would you like to rescan all hosts to ensure the hardware data is up-to-date? Please enter 'y' for yes or 'n' for no:"
         $response = Read-Host -Prompt $promptMessage
 
         if ($validResponses -contains $response) {
@@ -44,8 +48,6 @@ $CDPProxies = Get-VBRCDPProxy
 
 # Get all VBR Repositories
 $VBRRepositories = Get-VBRBackupRepository
-
-$BackupServerName = [System.Net.Dns]::GetHostByName(($env:computerName)).HostName
 
 #Get All GP Proxies
 $GPProxies = Get-VBRNASProxyServer
@@ -244,7 +246,8 @@ foreach ($Repository in $VBRRepositories) {
                 $hostRoles[$gatewayServer.Name].Roles += "Gateway"
                 $hostRoles[$gatewayServer.Name].Names += $Repository.Name
             }
-            if ($NrofRepositoryTasks -ne -1) {
+                if ($NrofRepositoryTasks -ne -1) {
+
             $hostRoles[$gatewayServer.Name].TotalGWTasks += $NrofRepositoryTasks
             $hostRoles[$gatewayServer.Name].TotalTasks += $NrofRepositoryTasks
             }else {
@@ -281,7 +284,7 @@ foreach ($Repository in $VBRRepositories) {
             $hostRoles[$Repository.Host.Name].Roles += "Repository"
             $hostRoles[$Repository.Host.Name].Names += $Repository.Name
         }
-        if ($NrofRepositoryTasks -ne -1) {
+         if ($NrofRepositoryTasks -ne -1) {
         $hostRoles[$Repository.Host.Name].TotalRepoTasks += $NrofRepositoryTasks
         $hostRoles[$Repository.Host.Name].TotalTasks += $NrofRepositoryTasks
         } else {
