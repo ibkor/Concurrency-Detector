@@ -121,18 +121,26 @@ foreach ($GPProxy in $GPProxies) {
 }
 
 # Gather ViProxy Data
-foreach ($Proxy in $VPProxies) {
+foreach ($Proxy in $VMwareProxies) {
     $NrofProxyTasks = $Proxy.MaxTasksCount
-    $ProxyCores = $Proxy.GetPhysicalHost().HardwareInfo.CoresCount
-    $ProxyRAM = ConverttoGB($Proxy.GetPhysicalHost().HardwareInfo.PhysicalRAMTotal)
+   try { $ProxyCores = $Proxy.GetPhysicalHost().HardwareInfo.CoresCount
+    $ProxyRAM = ConverttoGB($Proxy.GetPhysicalHost().HardwareInfo.PhysicalRAMTotal) }
+    catch{
+     $Server = Get-VBRServer -Name $Proxy.Name
+            $ProxyCores = $Server.GetPhysicalHost().HardwareInfo.CoresCount
+            $ProxyRAM = ConverttoGB($Server.GetPhysicalHost().HardwareInfo.PhysicalRAMTotal)
+    }
     
+    if ($proxy.Type -eq "Vi") { $proxy.Type = "VMware" }
+
     $ProxyDetails = [PSCustomObject]@{
         "Proxy Name"         = $Proxy.Name
         "Proxy Server"       = $Proxy.Host.Name
+        "Type"               = $Proxy.Type
         "Proxy Cores"        = $ProxyCores
         "Proxy RAM (GB)"     = $ProxyRAM        
         "Concurrent Tasks"   = $NrofProxyTasks
-    }                        
+    }                       
 
     $ProxyData += $ProxyDetails
 
@@ -187,8 +195,7 @@ foreach ($CDPProxy in $CDPProxies) {
 foreach ($Repository in $VBRRepositories) {
     $NrofRepositoryTasks = $Repository.Options.MaxTaskCount
     $gatewayServers = $Repository.GetActualGateways()
-    $NrofgatewayServers = $gatewayServers.Count
-    
+   $NrofgatewayServers = $gatewayServers.Count
     if ($gatewayServers.Count -gt 0) {
         foreach ($gatewayServer in $gatewayServers) {
             $Server = Get-VBRServer -Name $gatewayServer.Name
@@ -200,7 +207,7 @@ foreach ($Repository in $VBRRepositories) {
                 "Gateway Server"    = $gatewayServer.Name
                 "Gateway Cores"     = $GWCores
                 "Gateway RAM (GB)"  = $GWRAM        
-                "Concurrent Tasks"  = $NrofRepositoryTasks / $NrofgatewayServers
+                "Concurrent Tasks"  = $NrofRepositoryTasks
             }                        
             $GWData += $RepositoryDetails
 
