@@ -182,7 +182,8 @@ foreach ($CDPProxy in $CDPProxies) {
 foreach ($Repository in $VBRRepositories) {
     $NrofRepositoryTasks = $Repository.Options.MaxTaskCount
     $gatewayServers = $Repository.GetActualGateways()
-
+    $NrofgatewayServers = $gatewayServers.Count
+    
     if ($gatewayServers.Count -gt 0) {
         foreach ($gatewayServer in $gatewayServers) {
             $Server = Get-VBRServer -Name $gatewayServer.Name
@@ -194,7 +195,7 @@ foreach ($Repository in $VBRRepositories) {
                 "Gateway Server"    = $gatewayServer.Name
                 "Gateway Cores"     = $GWCores
                 "Gateway RAM (GB)"  = $GWRAM        
-                "Concurrent Tasks"  = $NrofRepositoryTasks
+                "Concurrent Tasks"  = $NrofRepositoryTasks / $NrofgatewayServers
             }                        
             $GWData += $RepositoryDetails
 
