@@ -53,20 +53,6 @@ RequirementsComparison.csv: Details for all backup components
 SuboptimalConfiguration.csv: Servers with suboptimal configurations
 OptimizedConfiguration.csv: Servers with optimized configurations
 Repositories.csv, Proxies.csv, Gateways.csv, CDPProxies.csv, GPProxies.csv: Data segmented by role
-Below are sample outputs from the PowerShell console for v12.3 (Windows), v13 (Linux). v13 (Windows):
-
-v12.3                
-
- v13 - Linux.     
-
-v13 - Windows
-
-
-
-Example Output from RequirementsComparison.csv:
-The server named 172.24.214.28 is configured solely as a Proxy. It has 6 CPU cores and 7 GB of RAM. With the Proxy role’s concurrent task limit set to 2, only 1 CPU core is required, so the server comfortably meets its resource requirements.
-
-The second server is assigned multiple roles: General Purpose Proxy, Proxy, Gateway Server, and Backup Server. It also hosts five separate repositories. According to the script’s analysis, this server is only capable of handling 0 tasks, as it has just 4 CPU cores and 15 GB of RAM, barely meeting the minimum requirements for the Backup Server role in v12, and not meeting them at all for v13. Despite this, a total of 65 concurrent tasks are configured across all assigned roles. To maintain these current settings, the server would require 39 CPU cores and 74 GB of RAM.
 
 
 USAGE
