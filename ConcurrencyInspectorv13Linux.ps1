@@ -42,8 +42,13 @@ if ($userResponse -eq 'y') {
 #Get all VMware proxies
 $VMwareProxies = Get-VBRViProxy
 
+#Get all Hyper-V Off-Host proxies
+$HyperVProxies = Get-VBRHvProxy
+
 # Get all CDP proxies
 $CDPProxies = Get-VBRCDPProxy
+
+$VPProxies = $VMwareProxies + $HyperVProxies
 
 # Get all VBR Repositories
 $VBRRepositories = Get-VBRBackupRepository
@@ -116,7 +121,7 @@ foreach ($GPProxy in $GPProxies) {
 }
 
 # Gather ViProxy Data
-foreach ($Proxy in $VMwareProxies) {
+foreach ($Proxy in $VPProxies) {
     $NrofProxyTasks = $Proxy.MaxTasksCount
     $ProxyCores = $Proxy.GetPhysicalHost().HardwareInfo.CoresCount
     $ProxyRAM = ConverttoGB($Proxy.GetPhysicalHost().HardwareInfo.PhysicalRAMTotal)
