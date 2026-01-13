@@ -315,6 +315,7 @@ foreach ($server in $hostRoles.GetEnumerator()) {
     $SuggestedTasksByCores = 0 
     $SuggestedTasksByRAM = 0
     $serverName = $server.Key
+Write-Host "RepoTasks=$($server.Value.TotalRepoTasks) GWTasks=$($server.Value.TotalGWTasks) VpProxyTasks=$($server.Value.TotalVpProxyTasks) GPProxyTasks=$($server.Value.TotalGPProxyTasks) CDPProxyTasks=$($server.Value.TotalCDPProxyTasks)"
 
     $RequiredCores = [Math]::Ceiling(
         (SafeValue $server.Value.TotalRepoTasks)    * $RepoGWCPUReq +
