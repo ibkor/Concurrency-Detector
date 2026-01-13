@@ -121,7 +121,7 @@ foreach ($GPProxy in $GPProxies) {
 }
 
 # Gather ViProxy Data
-foreach ($Proxy in $VMwareProxies) {
+foreach ($Proxy in $VPProxies) {
     $NrofProxyTasks = $Proxy.MaxTasksCount
    try { $ProxyCores = $Proxy.GetPhysicalHost().HardwareInfo.CoresCount
     $ProxyRAM = ConverttoGB($Proxy.GetPhysicalHost().HardwareInfo.PhysicalRAMTotal) }
@@ -131,12 +131,12 @@ foreach ($Proxy in $VMwareProxies) {
             $ProxyRAM = ConverttoGB($Server.GetPhysicalHost().HardwareInfo.PhysicalRAMTotal)
     }
     
-    if ($proxy.Type -eq "Vi") { $proxy.Type = "VMware" }
+    if ($proxy.Type -eq "Vi") { $proxytype = "VMware" } else {$proxytype = $proxy.Type}
 
     $ProxyDetails = [PSCustomObject]@{
         "Proxy Name"         = $Proxy.Name
         "Proxy Server"       = $Proxy.Host.Name
-        "Type"               = $Proxy.Type
+        "Type"               = $proxytype
         "Proxy Cores"        = $ProxyCores
         "Proxy RAM (GB)"     = $ProxyRAM        
         "Concurrent Tasks"   = $NrofProxyTasks
