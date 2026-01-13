@@ -4,9 +4,11 @@ $ExportPath = "/tmp/csv"
  #import module
 Import-Module /opt/veeam/powershell/Veeam.Backup.PowerShell/Veeam.Backup.PowerShell.psd1
 
+$BackupServerName = hostname
+
 #Connect to VBR
 $creds = Get-Credential
-Connect-VBRServer -Credential $creds -Server "Your VBR Server"
+Connect-VBRServer -Credential $creds -Server $BackupServerName
 
 # Rescan all the host when needed
 function Get-UserResponse {
