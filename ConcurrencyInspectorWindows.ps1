@@ -1,7 +1,40 @@
-# This project is licensed under the MIT License - see the LICENSE file for details.
+ # This project is licensed under the MIT License - see the LICENSE file for details.
 # Requires Run as Administrator
 
 $ExportPath = "C:\temp\csv"   #change if needed
+
+#Requirements as per Veeam User Guide - Verify them and change if needed
+
+#VMware - Hyper-V Proxy Requirements:
+$VPProxyRAMReq = 1    #1 GB per task
+$VPProxyCPUReq = 0.5  #1 CPU core per 2 tasks
+
+#General Purprose Proxy
+$GPProxyRAMReq = 4  #4GB per task
+$GPProxyCPUReq = 2   #2 CPU core per task
+
+# Repository / Gateway Requirements:
+$RepoGWRAMReq = 1    #1 GB per task
+$RepoGWCPUReq = 0.5  #1 CPU core per 2 tasks
+
+# CDP Proxy Requirements:
+$CDPProxyRAMReq = 8    #8 GB
+$CDPProxyCPUReq = 4    #4 CPU core 
+
+$BackupServerInfo = Get-VBRBackupServerInfo
+
+#Backup Server
+if($BackupServerInfo.Build.Major -eq 13){
+    $BSCPUReq = 8
+    $BSRAMReq = 16
+    } else {
+    $BSCPUReq = 4
+    $BSRAMReq = 8
+    }
+
+# SQL Server Requirements, if it is on the same server with any backup component.
+$SQLRAMReq = 2    #2 GB, min.
+$SQLCPUReq = 1    #1 CPU core  min.
 
 $BackupServerName = [System.Net.Dns]::GetHostByName(($env:computerName)).HostName
 
@@ -38,13 +71,20 @@ if ($userResponse -eq 'y') {
     Write-Host "Skipping rescan. Using existing data."
 }
 
-$BackupServerInfo = Get-VBRBackupServerInfo
+function SafeValue($value) {
+if ($null -eq $value) { 0 } else { $value }
+}
 
 #Get all VMware proxies
 $VMwareProxies = Get-VBRViProxy
 
+#Get all Hyper-V Off-Host proxies
+$HyperVProxies = Get-VBRHvProxy
+
 # Get all CDP proxies
 $CDPProxies = Get-VBRCDPProxy
+
+$VPProxies = $VMwareProxies + $HyperVProxies
 
 # Get all VBR Repositories
 $VBRRepositories = Get-VBRBackupRepository
@@ -149,19 +189,27 @@ foreach ($GPProxy in $GPProxies) {
     $hostRoles[$GPProxy.Server.Name].TotalTasks += $NrofGPProxyTasks
 }
 
-# Gather ViProxy Data
-foreach ($Proxy in $VMwareProxies) {
+# Gather VMware and Hyper-V Proxy Data
+foreach ($Proxy in $VPProxies) {
     $NrofProxyTasks = $Proxy.MaxTasksCount
-    $ProxyCores = $Proxy.GetPhysicalHost().HardwareInfo.CoresCount
-    $ProxyRAM = ConverttoGB($Proxy.GetPhysicalHost().HardwareInfo.PhysicalRAMTotal)
+   try { $ProxyCores = $Proxy.GetPhysicalHost().HardwareInfo.CoresCount
+    $ProxyRAM = ConverttoGB($Proxy.GetPhysicalHost().HardwareInfo.PhysicalRAMTotal) }
+    catch{
+     $Server = Get-VBRServer -Name $Proxy.Name
+            $ProxyCores = $Server.GetPhysicalHost().HardwareInfo.CoresCount
+            $ProxyRAM = ConverttoGB($Server.GetPhysicalHost().HardwareInfo.PhysicalRAMTotal)
+    }
     
+    if ($proxy.Type -eq "Vi") { $proxytype = "VMware" } else {$proxytype = $proxy.Type}
+
     $ProxyDetails = [PSCustomObject]@{
         "Proxy Name"         = $Proxy.Name
         "Proxy Server"       = $Proxy.Host.Name
+        "Type"               = $proxytype
         "Proxy Cores"        = $ProxyCores
         "Proxy RAM (GB)"     = $ProxyRAM        
         "Concurrent Tasks"   = $NrofProxyTasks
-    }                        
+    }                       
 
     $ProxyData += $ProxyDetails
 
@@ -173,13 +221,13 @@ foreach ($Proxy in $VMwareProxies) {
             "TotalTasks" = 0
             "Cores" = $ProxyCores
             "RAM" = $ProxyRAM
-            "TotalViProxyTasks" = 0
+            "TotalVpProxyTasks" = 0
         }
     } else {
         $hostRoles[$Proxy.Host.Name].Roles += "Proxy"
         $hostRoles[$Proxy.Host.Name].Names += $Proxy.Name
     }
-    $hostRoles[$Proxy.Host.Name].TotalViProxyTasks += $NrofProxyTasks
+    $hostRoles[$Proxy.Host.Name].TotalVpProxyTasks += $NrofProxyTasks
     $hostRoles[$Proxy.Host.Name].TotalTasks += $NrofProxyTasks
 }
 
@@ -205,10 +253,12 @@ foreach ($CDPProxy in $CDPProxies) {
             "TotalTasks" = 0
             "Cores" = $CDPProxyCores
             "RAM" = $CDPProxyRAM
+            "TotalCDPProxyTasks" = 0
         }
     } else {
         $hostRoles[$CDPProxy.Name].Roles += "CDPProxy"
         $hostRoles[$CDPProxy.Name].Names += $CDPProxy.Name 
+        $hostRoles[$CDPProxy.Name].TotalCDPProxyTasks += 1
     }
 }
 
@@ -217,6 +267,7 @@ foreach ($Repository in $VBRRepositories) {
     $NrofRepositoryTasks = $Repository.Options.MaxTaskCount
     $gatewayServers = $Repository.GetActualGateways()
     $NrofgatewayServers = $gatewayServers.Count
+
     if ($gatewayServers.Count -gt 0) {
         foreach ($gatewayServer in $gatewayServers) {
             $Server = Get-VBRServer -Name $gatewayServer.Name
@@ -309,49 +360,47 @@ foreach ($server in $hostRoles.GetEnumerator()) {
     $SuggestedTasksByCores = 0 
     $SuggestedTasksByRAM = 0
     $serverName = $server.Key
-    $CPUTasks = $server.Value.TotalRepoTasks + $server.Value.TotalGWTasks + $server.Value.TotalViProxyTasks
-    $MemTasks = $server.Value.TotalRepoTasks + $server.Value.TotalGWTasks
+
+    $RequiredCores = [Math]::Ceiling(
+        (SafeValue $server.Value.TotalRepoTasks)    * $RepoGWCPUReq +
+        (SafeValue $server.Value.TotalGWTasks)      * $RepoGWCPUReq +
+        (SafeValue $server.Value.TotalVpProxyTasks) * $VPProxyCPUReq +
+        (SafeValue $server.Value.TotalGPProxyTasks)* $GPProxyCPUReq +
+        (SafeValue $server.Value.TotalCDPProxyTasks)* $CDPProxyCPUReq
+    )
+
+    $RequiredRAM = [Math]::Ceiling(
+        (SafeValue $server.Value.TotalRepoTasks)    * $RepoGWRAMReq +
+        (SafeValue $server.Value.TotalGWTasks)      * $RepoGWRAMReq +
+        (SafeValue $server.Value.TotalVpProxyTasks) * $VPProxyRAMReq +
+        (SafeValue $server.Value.TotalGPProxyTasks)* $GPProxyRAMReq +
+        (SafeValue $server.Value.TotalCDPProxyTasks)* $CDPProxyRAMReq
+    )
+
     $coresAvailable = $server.Value.Cores
     $ramAvailable = $server.Value.RAM
     $totalTasks = $server.Value.TotalTasks
+    
+    #suggestion cores / RAM are only to calculate the suggested nr of tasks. 
     $SuggestionCores = $coresAvailable
-    $SuggestionRAM = $ramAvailable
-
-    # Calculate requirements
-    $RequiredCores = [Math]::Ceiling($CPUTasks / 2) # 2 tasks per CPU core
-    $RequiredRAM = $MemTasks # 1 GB RAM per task
-
-    if($server.Value.Roles -contains "GPProxy") {
-        $RequiredCores += 2   #CPU core requirement for GP Proxy
-        $RequiredRAM += 2 + ($server.Value.TotalGPProxyTasks)*4
-        $SuggestionCores += -2
-        $SuggestionRAM += -2 - ($server.Value.TotalGPProxyTasks)*4
-    }
- 
-    if($server.Value.Roles -contains "CDPProxy") {
-        $RequiredCores += 4  #CPU core requirement for CDP Proxy added
-        $RequiredRAM += 8    #RAM requirement for CDP Proxy added
-        $SuggestionCores += -4
-        $SuggestionRAM += -8
-    }
+    $SuggestionRAM = [Math]::Ceiling(
+     (SafeValue $ramAvailable) -
+     (SafeValue $server.Value.TotalGPProxyTasks*$GPProxyRAMReq) -
+     (SafeValue $server.Value.TotalCDPProxyTasks*$CDPProxyRAMReq)
+    )
    
-    if ($serverName -contains $BackupServerName -and $BackupServerInfo.Build.Major -eq "13") {
-        $RequiredCores += 8  #CPU core requirement for Backup Server added
-        $RequiredRAM += 16    #RAM requirement for Backup Server added
-        $SuggestionCores += -8
-        $SuggestionRAM += -16
-    } elseif ($serverName -contains $BackupServerName -and $BackupServerInfo.Build.Major -lt "13") {
-        $RequiredCores += 4  #CPU core requirement for Backup Server added
-        $RequiredRAM += 8    #RAM requirement for Backup Server added
-        $SuggestionCores += -4
-        $SuggestionRAM += -8
+    if ($serverName -contains $BackupServerName) {
+        $RequiredCores += $BSCPUReq  #CPU core requirement for Backup Server added
+        $RequiredRAM += $BSRAMReq    #RAM requirement for Backup Server added
+        $SuggestionCores -= $BSCPUReq
+        $SuggestionRAM -= $BSRAMReq
     }
 
     if ($SQLServer -eq $serverName) {
-        $RequiredCores += 1  #min CPU core requirement for SQL Server added
-        $RequiredRAM += 1    #min RAM requirement for SQL Server added
-        $SuggestionCores += -1
-        $SuggestionRAM += -1
+        $RequiredCores += $SQLCPUReq  #min CPU core requirement for SQL Server added
+        $RequiredRAM += $SQLRAMReq    #min RAM requirement for SQL Server added
+        $SuggestionCores -= $SQLCPUReq
+        $SuggestionRAM -= $SQLRAMReq
     }
 
     $SuggestedTasksByCores += $SuggestionCores*2
