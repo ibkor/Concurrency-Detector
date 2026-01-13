@@ -68,9 +68,6 @@ The server named 172.24.214.28 is configured solely as a Proxy. It has 6 CPU cor
 
 The second server is assigned multiple roles: General Purpose Proxy, Proxy, Gateway Server, and Backup Server. It also hosts five separate repositories. According to the script’s analysis, this server is only capable of handling 0 tasks, as it has just 4 CPU cores and 15 GB of RAM, barely meeting the minimum requirements for the Backup Server role in v12, and not meeting them at all for v13. Despite this, a total of 65 concurrent tasks are configured across all assigned roles. To maintain these current settings, the server would require 39 CPU cores and 74 GB of RAM.
 
-<img width="1914" height="952" alt="image" src="https://github.com/user-attachments/assets/8d68a50d-3619-476f-b85d-d94f3ea2aea3" />
-<img width="1914" height="857" alt="image" src="https://github.com/user-attachments/assets/32971a8b-2db2-475d-9d01-6c9fb032eaad" />
-<img width="1914" height="919" alt="image" src="https://github.com/user-attachments/assets/6cb2ba1a-5dc6-4b98-8b57-ed7f798b9039" />
 
 USAGE
 The scripts are designed to be executed on the Backup Server. Follow the relevant steps based on the operating system and Veeam version:
