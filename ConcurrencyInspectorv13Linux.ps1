@@ -1,5 +1,27 @@
  # This project is licensed under the MIT License - see the LICENSE file for details. 
 $ExportPath = "/tmp/csv"
+
+#Requirements as per Veeam User Guide - Verify them and change if needed
+
+#VMware - Hyper-V Proxy Requirements:
+$VPProxyRAMReq = 1    #1 GB per task
+$VPProxyCPUReq = 0.5  #1 CPU core per 2 tasks
+
+#General Purprose Proxy
+$GPProxyRAMReq = 4  #4GB per task
+$GPProxyCPUReq = 2   #2 CPU core per task
+
+# Repository / Gateway Requirements:
+$RepoGWRAMReq = 1    #1 GB per task
+$RepoGWCPUReq = 0.5  #1 CPU core per 2 tasks
+
+# CDP Proxy Requirements:
+$CDPProxyRAMReq = 8    #8 GB
+$CDPProxyCPUReq = 4    #4 CPU core 
+
+#Backup Server
+$BSCPUReq = 8
+$BSRAMReq = 16   
  
  #import module
 Import-Module /opt/veeam/powershell/Veeam.Backup.PowerShell/Veeam.Backup.PowerShell.psd1
@@ -65,6 +87,10 @@ $RepoData = @()
 $GPProxyData = @()
 $RequirementsComparison = @()
 $hostRoles = @{}
+
+function SafeValue($value) {
+if ($null -eq $value) { 0 } else { $value }
+}
 
 function ConverttoGB ($inBytes) {
     $inGB = [math]::Floor($inBytes / 1GB)
@@ -184,10 +210,12 @@ foreach ($CDPProxy in $CDPProxies) {
             "TotalTasks" = 0
             "Cores" = $CDPProxyCores
             "RAM" = $CDPProxyRAM
+            "TotalCDPProxyTasks" = 0
         }
     } else {
         $hostRoles[$CDPProxy.Name].Roles += "CDPProxy"
         $hostRoles[$CDPProxy.Name].Names += $CDPProxy.Name 
+        $hostRoles[$CDPProxy.Name].TotalCDPProxyTasks += 1
     }
 }
 
@@ -281,37 +309,40 @@ foreach ($server in $hostRoles.GetEnumerator()) {
     $SuggestedTasksByCores = 0 
     $SuggestedTasksByRAM = 0
     $serverName = $server.Key
-    $CPUTasks = $server.Value.TotalRepoTasks + $server.Value.TotalGWTasks + $server.Value.TotalViProxyTasks
-    $MemTasks = $server.Value.TotalRepoTasks + $server.Value.TotalGWTasks
+
+    $RequiredCores = [Math]::Ceiling(
+        (SafeValue $server.Value.TotalRepoTasks)    * $RepoGWCPUReq +
+        (SafeValue $server.Value.TotalGWTasks)      * $RepoGWCPUReq +
+        (SafeValue $server.Value.TotalVpProxyTasks) * $VPProxyCPUReq +
+        (SafeValue $server.Value.TotalGPProxyTasks)* $GPProxyCPUReq +
+        (SafeValue $server.Value.TotalCDPProxyTasks)* $CDPProxyCPUReq
+    )
+
+    $RequiredRAM = [Math]::Ceiling(
+        (SafeValue $server.Value.TotalRepoTasks)    * $RepoGWRAMReq +
+        (SafeValue $server.Value.TotalGWTasks)      * $RepoGWRAMReq +
+        (SafeValue $server.Value.TotalVpProxyTasks) * $VPProxyRAMReq +
+        (SafeValue $server.Value.TotalGPProxyTasks)* $GPProxyRAMReq +
+        (SafeValue $server.Value.TotalCDPProxyTasks)* $CDPProxyRAMReq
+    )
+
     $coresAvailable = $server.Value.Cores
     $ramAvailable = $server.Value.RAM
     $totalTasks = $server.Value.TotalTasks
+    
+    #suggestion cores / RAM are only to calculate the suggested nr of tasks. 
     $SuggestionCores = $coresAvailable
-    $SuggestionRAM = $ramAvailable
-
-    # Calculate requirements
-    $RequiredCores = [Math]::Ceiling($CPUTasks / 2) # 2 tasks per CPU core
-    $RequiredRAM = $MemTasks # 1 GB RAM per task
-
-    if($server.Value.Roles -contains "GPProxy") {
-        $RequiredCores += 2   #CPU core requirement for GP Proxy
-        $RequiredRAM += 2 + ($server.Value.TotalGPProxyTasks)*4
-        $SuggestionCores += -2
-        $SuggestionRAM += -2 - ($server.Value.TotalGPProxyTasks)*4
-    }
- 
-    if($server.Value.Roles -contains "CDPProxy") {
-        $RequiredCores += 4  #CPU core requirement for CDP Proxy added
-        $RequiredRAM += 8    #RAM requirement for CDP Proxy added
-        $SuggestionCores += -4
-        $SuggestionRAM += -8
-    }
+    $SuggestionRAM = [Math]::Ceiling(
+     (SafeValue $ramAvailable) -
+     (SafeValue $server.Value.TotalGPProxyTasks*$GPProxyRAMReq) -
+     (SafeValue $server.Value.TotalCDPProxyTasks*$CDPProxyRAMReq)
+    )
    
     if ($serverName -contains $BackupServerName) {
-        $RequiredCores += 8  #CPU core requirement for Backup Server v13 added
-        $RequiredRAM += 16    #RAM requirement for Backup Server v13 added
-        $SuggestionCores += -8
-        $SuggestionRAM += -16
+        $RequiredCores += $BSCPUReq  #CPU core requirement for Backup Server added
+        $RequiredRAM += $BSRAMReq    #RAM requirement for Backup Server added
+        $SuggestionCores -= $BSCPUReq
+        $SuggestionRAM -= $BSRAMReq
     }
 
     $SuggestedTasksByCores += $SuggestionCores*2
