@@ -211,13 +211,14 @@ foreach ($CDPProxy in $CDPProxies) {
             "TotalTasks" = 0
             "Cores" = $CDPProxyCores
             "RAM" = $CDPProxyRAM
-            "TotalCDPProxyTasks" = 1
+            "TotalCDPProxyTasks" = 0
         }
     } else {
         $hostRoles[$CDPServer.Name].Roles += "CDPProxy"
         $hostRoles[$CDPServer.Name].Names += $CDPProxy.Name 
-        $hostRoles[$CDPServer.Name].TotalCDPProxyTasks += 1
     }
+    $hostRoles[$CDPServer.Name].TotalCDPProxyTasks += 1
+    Write-warning $hostRoles[$CDPServer.Name].TotalCDPProxyTasks $CDPServer.Name
 }
 
 # Gather Repository and Gateway Data
@@ -326,6 +327,7 @@ foreach ($server in $hostRoles.GetEnumerator()) {
         (SafeValue $server.Value.TotalGPProxyTasks)* $GPProxyRAMReq +
         (SafeValue $server.Value.TotalCDPProxyTasks)* $CDPProxyRAMReq
     )
+
 
     $coresAvailable = $server.Value.Cores
     $ramAvailable = $server.Value.RAM
