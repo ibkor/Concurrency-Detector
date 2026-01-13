@@ -21,4 +21,4 @@ Run the script:
 
 Follow the prompt to choose whether to rescan all hosts.
 
-Review the output in your console and check the generated CSV files in C:\csv\ for detailed results on repositories, proxies, gateways, and configuration analysis. 
+Review the output in your console and check the generated CSV files in C:\temp\csv\ for detailed results on repositories, proxies, gateways, and configuration analysis. 
