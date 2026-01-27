@@ -75,16 +75,16 @@ function SafeValue($value) {
 if ($null -eq $value) { 0 } else { $value }
 }
 
-#Get all VMware proxies
-$VMwareProxies = Get-VBRViProxy
+ #Get all VMware proxies
+$VMwareProxies = @(Get-VBRViProxy)
 
 #Get all Hyper-V Off-Host proxies
-$HyperVProxies = Get-VBRHvProxy
+$HyperVProxies = @(Get-VBRHvProxy)
 
 # Get all CDP proxies
 $CDPProxies = Get-VBRCDPProxy
 
-$VPProxies = $VMwareProxies + $HyperVProxies
+$VPProxies = $VMwareProxies + $HyperVProxies 
 
 # Get all VBR Repositories
 $VBRRepositories = Get-VBRBackupRepository
@@ -489,4 +489,5 @@ $OptimizedConfiguration | Export-Csv -Path "$ExportPath\OptimizedConfiguration.c
 $SuboptimalConfiguration | Export-Csv -Path "$ExportPath\SuboptimalConfiguration.csv" -Delimiter "," -NoTypeInformation
 
 Write-Host "Data exported to CSV files successfully."   
+
 
