@@ -21,8 +21,6 @@ $RepoGWCPUReq = 0.5  #1 CPU core per 2 tasks
 $CDPProxyRAMReq = 8    #8 GB
 $CDPProxyCPUReq = 4    #4 CPU core 
 
-$BackupServerInfo = Get-VBRBackupServerInfo
-
 #Backup Server
 if($BackupServerInfo.Build.Major -eq 13){
     $BSCPUReq = 8
@@ -41,6 +39,8 @@ $BackupServerName = [System.Net.Dns]::GetHostByName(($env:computerName)).HostNam
 #Connect to VBR
 $creds = Get-Credential
 Connect-VBRServer -Credential $creds -Server $BackupServerName
+
+$BackupServerInfo = Get-VBRBackupServerInfo
 
 # Rescan all the host when needed
 function Get-UserResponse {
@@ -450,7 +450,6 @@ Write-Host "Requirements Comparison:"
 # Separate the outputs into optimized, underconfigured, and suboptimal configurations based on the comparison
 $OptimizedConfiguration = @()
 $SuboptimalConfiguration = @()
-$UnderconfiguredConfiguration = @()
 
 foreach ($req in $RequirementsComparison) {
 
@@ -490,3 +489,4 @@ $OptimizedConfiguration | Export-Csv -Path "$ExportPath\OptimizedConfiguration.c
 $SuboptimalConfiguration | Export-Csv -Path "$ExportPath\SuboptimalConfiguration.csv" -Delimiter "," -NoTypeInformation
 
 Write-Host "Data exported to CSV files successfully."   
+
